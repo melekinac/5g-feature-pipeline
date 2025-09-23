@@ -1,0 +1,171 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: pg-cell
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: pgadmin-cell
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"
+
+  api:
+    build: .
+    container_name: api-cell
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    command:
+      [
+        "uvicorn",
+        "api.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--reload",
+      ]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+
+  feature_job:
+    build: .
+    container_name: feature-job
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    command: ["python", "jobs/feature_job.py"]
+    volumes:
+      - ./:/app
+      - ./data:/data
+    deploy:
+      resources:
+        limits:
+          memory: 6g
+
+  train_job:
+    build: .
+    container_name: train-job
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    command: ["python", "jobs/train_job.py"]
+    volumes:
+      - ./:/app
+      - ./models:/app/models
+
+  inference_job:
+    build: .
+    container_name: infer-job
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    command: ["python", "jobs/inference_job.py", "--loop"]
+    volumes:
+      - ./:/app
+
+  api_dashboard:
+    build: .
+    container_name: api-dashboard
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    command:
+      [
+        "uvicorn",
+        "api.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8080",
+        "--reload",
+      ]
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./:/app
+
+  dashboard:
+    image: node:20-alpine
+    container_name: dashboard-cell
+    working_dir: /app
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./dashboard:/app
+    command: ["sh", "-c", "npm install && npm start"]
+    stdin_open: true
+    tty: true
+
+  forecast_job:
+    build: .
+    container_name: forecast-job
+    command: python jobs/forecast_job.py
+    volumes:
+      - .:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+
+  tune_job:
+    build: .
+    container_name: tune-job
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    command: ["python", "jobs/tune_job.py"]
+    volumes:
+      - ./:/app
+      - ./models:/app/models
+  # simulator_job:
+  #   build: .
+  #   command: python jobs/simulator_job.py
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   environment:
+  #     - SIM_INTERVAL_SEC=5
+  #     - SIM_NUM_CELLS=5
+  #     - SIM_DURATION_MIN=60
+  #   volumes:
+  #     - ./:/app #  mutlaka olsun
+
+volumes:
+  pgdata:

@@ -1,0 +1,20 @@
+horizon_minutes: 60
+
+trend_thresholds:
+  up: 80
+  flat: 40
+  down: -60
+
+energy_actions:
+  class_rules:
+    Very Weak: increase
+    Weak: increase
+    Good: hold
+    Excellent: decrease
+
+  trend_rules:
+    up: increase
+    flat: hold
+    down: decrease
+
+thresholds_ver: v1
