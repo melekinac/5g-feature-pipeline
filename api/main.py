@@ -20,18 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, text
 import os, pandas as pd, subprocess, json
 from . import auth
-
-# -------------------------------------------------
-# Database Configuration
-# -------------------------------------------------
-DB_USER = os.getenv("POSTGRES_USER", "postgres5g")
-DB_PASS = os.getenv("POSTGRES_PASSWORD", "postgres5g")
-DB_HOST = os.getenv("POSTGRES_HOST", "postgres")
-DB_PORT = os.getenv("POSTGRES_PORT", "5432")
-DB_NAME = os.getenv("POSTGRES_DB", "user_activity_db")
-
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-engine = create_engine(DATABASE_URL)
+from .database import engine  
 
 # -------------------------------------------------
 # FastAPI App Initialization
@@ -46,8 +35,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include authentication routes
+
 app.include_router(auth.router)
+
 
 # -------------------------------------------------
 # Forecast & Cell Features

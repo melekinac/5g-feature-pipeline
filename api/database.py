@@ -1,63 +1,61 @@
 """
-SQLAlchemy Database Configuration
-================================================
+database.py — SQLAlchemy Database Configuration
+===============================================
 
-This module initializes the SQLAlchemy database engine, session factory,
-and declarative base used across the FastAPI application.
+Creates a unified SQLAlchemy engine that works seamlessly in both
+local Docker and Google Cloud Run environments.
 
-It reads connection parameters from environment variables (with sensible defaults),
-establishes a PostgreSQL connection, and provides the session maker (`SessionLocal`)
-to be used in dependency injection for API routes.
-
-Environment Variables:
-----------------------
-- POSTGRES_USER:     Database username          (default: postgres5g)
-- POSTGRES_PASSWORD: Database password          (default: postgres5g)
-- POSTGRES_HOST:     Database host/service name (default: postgres)
-- POSTGRES_PORT:     Database port              (default: 5432)
-- POSTGRES_DB:       Database name              (default: user_activity_db)
-
-Exports:
---------
-- engine: SQLAlchemy Engine bound to the PostgreSQL database
-- SessionLocal: Factory for database sessions (used via dependency injection)
-- Base: Declarative base class for defining ORM models
+Defines:
+---------
+- get_engine(): dynamically builds the correct connection URL
+- engine: global SQLAlchemy Engine instance
+- SessionLocal: session factory for ORM operations
+- Base: declarative base for model definitions
 """
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+
 import os
-
-# -------------------------------------------------
-# Environment-Based Database Configuration
-# -------------------------------------------------
-
-DB_USER = os.getenv("POSTGRES_USER", "postgres5g")
-DB_PASS = os.getenv("POSTGRES_PASSWORD", "postgres5g")
-DB_HOST = os.getenv("POSTGRES_HOST", "postgres")
-DB_PORT = os.getenv("POSTGRES_PORT", "5432")
-DB_NAME = os.getenv("POSTGRES_DB", "user_activity_db")
-
-# -------------------------------------------------
-# Connection String
-# -------------------------------------------------
-SQLALCHEMY_DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.engine import Engine
 
 
-# -------------------------------------------------
-#  SQLAlchemy Engine & Session Factory
-# -------------------------------------------------
-# The engine manages the database connection pool.
-# The SessionLocal factory provides transactional session objects per request.
+def get_engine() -> Engine:
+    """Return SQLAlchemy engine (auto-detect Cloud Run vs Docker)."""
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False,
-                             autoflush=False, # Transactions must be explicitly committed
-                               bind=engine# Prevent automatic flush before queries 
-                               ) 
-  
-# -------------------------------------------------
-# Declarative Base
-# -------------------------------------------------
-# All ORM models should inherit from this base class.
+    # -------------------------------------------------------------
+    # Environment Variables
+    # -------------------------------------------------------------
+    db_user = os.getenv("POSTGRES_USER", "postgres5g")
+    db_pass = os.getenv("POSTGRES_PASSWORD", "postgres5g")
+    db_name = os.getenv("POSTGRES_DB", "user_activity_db")
+    db_host = os.getenv("POSTGRES_HOST", "postgres")  # ⚡ Docker service name
+    db_port = os.getenv("POSTGRES_PORT", "5432")
+    instance_connection_name = "g-energy-optimize:europe-west1:g5-postgres"
+
+    # -------------------------------------------------------------
+    # Environment Detection
+    # -------------------------------------------------------------
+    if os.getenv("K_SERVICE"):  # ✅ Running in Cloud Run
+        print("🌩 Using Unix socket connection (Cloud Run / Cloud SQL).")
+        url = (
+            f"postgresql+psycopg2://{db_user}:{db_pass}@/{db_name}"
+            f"?host=/cloudsql/{instance_connection_name}"
+        )
+    else:  # ✅ Local or Docker
+        print("🐳 Using TCP connection (Local / Docker).")
+        url = (
+            f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
+        )
+
+    # -------------------------------------------------------------
+    # Create Engine
+    # -------------------------------------------------------------
+    return create_engine(url, echo=False, future=True, pool_pre_ping=True)
+
+
+# -------------------------------------------------------------
+# ORM Globals
+# -------------------------------------------------------------
+engine = get_engine()
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
