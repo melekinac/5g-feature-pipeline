@@ -133,21 +133,25 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <div
-            id="energyCard"
-            className="bg-blue-50 dark:bg-blue-900 rounded-xl p-5 shadow flex flex-col justify-center"
-          >
-            <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide">
-              Enerji Tasarrufu
-            </h3>
-            {/* <p className="text-3xl font-bold text-blue-600 dark:text-blue-200 mt-2">
-              {energySummary.saved_pct?.toFixed(1)}%
-            </p> */}
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {energySummary.total_energy_kwh_year?.toFixed(0)} kWh
+  <div
+  id="energyForecastCard"
+  className="bg-purple-50 dark:bg-purple-900 rounded-xl p-5 shadow flex flex-col justify-center"
+>
+  <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wide">
+    Yıllık Tahmin
+  </h3>
+  <p className="text-lg font-medium text-purple-700 dark:text-purple-200 mt-1">
+   {energySummary.saved_kwh
+  ? `${(energySummary.saved_kwh / 1000).toFixed(2)} MWh`
+  : "Veri Yok"}
 
-            </p>
-          </div>
+  </p>
+  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+    Toplam yıllık enerji tasarrufu
+  </p>
+</div>
+
+
 
           <div
             id="savingCard"
