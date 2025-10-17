@@ -1,6 +1,8 @@
-.env
-__pycache__/
-models/*.pkl
-data/*.xlsx 
+rs
 node_modules/
-
+__pycache__/
+venv/
+.env.backup
+.env.local
+*.log
+.cache/

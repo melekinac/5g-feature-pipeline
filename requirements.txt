@@ -1,16 +1,37 @@
-fastapi==0.116.1       
-uvicorn==0.35.0        
-psycopg2-binary       
-SQLAlchemy>=2.0        
-python-dotenv          
-pandas                
-numpy                 
-scikit-learn         
-statsmodels           
-lightgbm              
-openpyxl               
-pydantic               
-requests               
-optuna==3.6.1
-xgboost
-prophet
+# === Backend Web Framework ===
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+
+# === Database Layer ===
+SQLAlchemy>=2.0
+psycopg2-binary==2.9.9
+alembic==1.13.2
+
+# === Authentication & Security ===
+python-jose==3.3.0            # JWT handling
+passlib[bcrypt]==1.7.4        # Password hashing
+bcrypt==4.1.3                 # Bcrypt backend for Passlib
+python-multipart==0.0.9       # Form data support
+python-dotenv==1.0.1          # Environment variable management
+
+# === Core Utilities ===
+pydantic==2.7.0               # Data validation / serialization
+requests==2.32.3              # HTTP client
+aiofiles==23.2.1              # Async file I/O
+httpx==0.27.0                 # Async HTTP client
+
+# === Data Science / Machine Learning (5G Optimization Engine) ===
+pandas                        # Data manipulation
+numpy                         # Numerical operations
+scikit-learn                  # Machine learning utilities
+statsmodels                   # Statistical modeling
+lightgbm                      # Gradient boosting model
+xgboost                       # Tree-based boosting model
+prophet                       # Time series forecasting
+optuna==3.6.1                 # Hyperparameter optimization
+openpyxl                      # Excel data handling
+
+# === Visualization & Metrics (optional for API-side analysis) ===
+matplotlib                    # Plotting and charts
+seaborn                       # Statistical visualization
+

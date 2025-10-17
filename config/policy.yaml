@@ -1,20 +1,71 @@
-horizon_minutes: 60
+# ==========================================================
+# 5G ENERGY OPTIMIZATION POLICY CONFIGURATION
+# Version: v1
+# ----------------------------------------------------------
+# This configuration defines the adaptive energy management
+# policy for 5G base stations. It combines both traffic
+# trend analysis and signal quality classification to
+# determine dynamic power-saving or performance actions.
+# ==========================================================
 
+horizon_minutes: 60 # Forecast horizon in minutes (e.g., 60 = 1 hour ahead)
+
+# ----------------------------------------------------------
+# TRAFFIC TREND THRESHOLDS
+# ----------------------------------------------------------
+# Defines percentage-based change thresholds to classify
+# traffic patterns as "up", "flat", or "down".
+# These values are derived from the relative difference
+# between forecasted and historical throughput averages.
+# ----------------------------------------------------------
 trend_thresholds:
-  up: 80
-  flat: 40
-  down: -60
+    up: 80 # ≥ +80% increase in traffic → "up" trend
+    flat: 40 # Between ±40% variation → "flat" (stable)
+    down: -60 # ≤ -60% decrease in traffic → "down" trend
 
+# ----------------------------------------------------------
+# ENERGY ACTION RULES
+# ----------------------------------------------------------
+# The policy engine applies two layers of decision logic:
+#   1. Signal-quality-based actions (RSRP class levels)
+#   2. Traffic-trend-based actions (load dynamics)
+#
+# These two rules can be combined to determine the final
+# action per cell (e.g., increase, hold, or decrease power).
+# ----------------------------------------------------------
 energy_actions:
-  class_rules:
-    Very Weak: increase
-    Weak: increase
-    Good: hold
-    Excellent: decrease
+    # ----------------------------------------------
+    # SIGNAL QUALITY-BASED RULES (RSRP Classification)
+    # ----------------------------------------------
+    # Adjust power settings according to the signal class:
+    #   - Very Weak / Weak → Increase energy to stabilize coverage
+    #   - Good → Maintain current settings
+    #   - Excellent → Reduce energy to save power without loss of QoS
+    # ----------------------------------------------
+    class_rules:
+        Very Weak: increase
+        Weak: increase
+        Good: hold
+        Excellent: decrease
 
-  trend_rules:
-    up: increase
-    flat: hold
-    down: decrease
+    # ----------------------------------------------
+    # TRAFFIC TREND-BASED RULES
+    # ----------------------------------------------
+    # Adapt energy usage according to short-term traffic evolution:
+    #   - Up → Increase power to handle rising load
+    #   - Flat → Maintain stable energy consumption
+    #   - Down → Decrease power or switch to sleep mode
+    # ----------------------------------------------
+    trend_rules:
+        up: increase
+        flat: hold
+        down: decrease
 
+# ----------------------------------------------------------
+# CONFIGURATION VERSION CONTROL
+# ----------------------------------------------------------
+# Used for traceability and model–policy synchronization.
+# Increment this value when deploying new threshold sets
+# or updated decision rules (e.g., thresholds_ver: v2).
+# ----------------------------------------------------------
 thresholds_ver: v1

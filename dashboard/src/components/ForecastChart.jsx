@@ -1,11 +1,42 @@
+/**
+ * ForecastChart.jsx — 5G Energy Optimization Dashboard
+ * =====================================================
+ *
+ * Displays predicted energy or traffic values for a specific cell.
+ *
+ * Features:
+ * ----------
+ * - Fetches forecast data from the API using the selected cell ID.
+ * - Visualizes prediction results and confidence intervals (CI).
+ * - Uses Recharts for smooth, responsive line and area charts.
+ *
+ * Technical Notes:
+ * ----------------
+ * - API: fetchForecastCellId(cellId)
+ * - Chart Layers:
+ *    • y_hat → predicted mean value
+ *    • ci_low / ci_high → lower and upper confidence interval bounds
+ */
+
 import React, { useEffect, useState } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, ResponsiveContainer } from "recharts";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  Area,
+  ResponsiveContainer,
+} from "recharts";
 import { fetchForecastCellId } from "../api";
 
 export default function ForecastChart({ cellId = "57661" }) {
   const [data, setData] = useState([]);
 
   useEffect(() => {
+  
     async function load() {
       try {
         const res = await fetchForecastCellId(cellId);
@@ -28,7 +59,7 @@ export default function ForecastChart({ cellId = "57661" }) {
 
   return (
     <div className="bg-white rounded-xl shadow p-4">
-      <h2 className="text-lg font-semibold mb-4">Forecast for Cell {cellId}</h2>
+      <h2 className="text-lg font-semibold mb-4">Hücre {cellId} Tahmin Grafiği</h2>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" />
@@ -37,7 +68,7 @@ export default function ForecastChart({ cellId = "57661" }) {
           <Tooltip />
           <Legend />
 
-          
+
           <Area
             type="monotone"
             dataKey="ci_high"
@@ -57,8 +88,14 @@ export default function ForecastChart({ cellId = "57661" }) {
             isAnimationActive={false}
           />
 
-
-          <Line type="monotone" dataKey="y_hat" stroke="#2563eb" strokeWidth={2} dot={false} />
+          
+          <Line
+            type="monotone"
+            dataKey="y_hat"
+            stroke="#2563eb"
+            strokeWidth={2}
+            dot={false}
+          />
         </LineChart>
       </ResponsiveContainer>
     </div>

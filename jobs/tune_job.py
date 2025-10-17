@@ -1,3 +1,42 @@
+"""
+=============================================================
+5G ENERGY OPTIMIZATION PIPELINE – MODEL TUNING (Optuna)
+=============================================================
+
+Purpose:
+--------
+Performs hyperparameter optimization for the regression model
+(RandomForestRegressor) used in the 5G Energy Optimization pipeline.
+The tuning process aims to minimize prediction error (MAPE) and
+store the best-performing configuration for future training runs.
+
+Core Responsibilities:
+----------------------
+1. **Objective Function**
+   - Uses `get_data_for_regression()` from `utils.training` to
+     fetch standardized training and test datasets.
+   - Defines Optuna search space for Random Forest hyperparameters
+     (e.g., n_estimators, max_depth, min_samples_split, etc.).
+
+2. **Optimization Process**
+   - Runs multiple trials to minimize the Mean Absolute Percentage Error (MAPE).
+   - Selects the best hyperparameter set and saves it to:
+     → `models/best_params.json`.
+
+3. **Result Tracking**
+   - Exports all trial results to a CSV file:
+     → `models/optuna_rf_results.csv`.
+   - Enables reproducibility and auditability of the tuning process.
+
+Technical Notes:
+----------------
+- Framework: Optuna (direction = "minimize")
+- Model: sklearn.ensemble.RandomForestRegressor
+- Metric: mean_absolute_percentage_error (MAPE)
+- Output: JSON + CSV artifacts stored in `models/` directory.
+=============================================================
+"""
+
 import optuna
 import json
 import numpy as np
@@ -47,4 +86,4 @@ if __name__ == "__main__":
    
     df = study.trials_dataframe()
     df.to_csv(f"{MODEL_DIR}/optuna_rf_results.csv", index=False)
-    print(f"Tüm sonuçlar {MODEL_DIR}/optuna_rf_results.csv dosyasına yazıldı.")
+    print(f"All results were written to the file {MODEL_DIR}/optuna_rf_results.csv.")

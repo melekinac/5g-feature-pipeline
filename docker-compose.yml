@@ -1,4 +1,13 @@
+version: "3.9"
+
 services:
+    # ======================================================
+    # POSTGRES DATABASE CONTAINER
+    # ------------------------------------------------------
+    # Stores all raw, cleaned, feature, forecast, and policy data.
+    # Core data warehouse of the entire 5G optimization pipeline.
+    # ======================================================
+
     postgres:
         image: postgres:16
         container_name: pg-cell
@@ -13,9 +22,15 @@ services:
             - ./sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
         healthcheck:
             test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-            interval: 10s
-            timeout: 5s
-            retries: 5
+            interval: 5s
+            timeout: 3s
+            retries: 10
+
+    # ======================================================
+    # PGADMIN UI (DATABASE MANAGEMENT)
+    # ------------------------------------------------------
+    # Web-based database interface for PostgreSQL.
+    # ======================================================
 
     pgadmin:
         image: dpage/pgadmin4:8
@@ -28,12 +43,18 @@ services:
         ports:
             - "5050:80"
 
+    # ======================================================
+    # FASTAPI BACKEND (API SERVICE)
+    # ------------------------------------------------------
+    # Provides REST endpoints for forecast, KPIs, and energy data.
+    # Serves as middleware between the dashboard and PostgreSQL.
+    # ======================================================
+
     api:
         build: .
         container_name: api-cell
         depends_on:
-            postgres:
-                condition: service_healthy
+            - postgres
         env_file:
             - .env
         command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
@@ -43,12 +64,18 @@ services:
             - ./:/app
             - /var/run/docker.sock:/var/run/docker.sock
 
+    # ======================================================
+    # FEATURE JOB
+    # ------------------------------------------------------
+    # Computes engineered features from cleaned cell data.
+    # Outputs results to `cell_features` table for ML training.
+    # ======================================================
+
     feature_job:
         build: .
         container_name: feature-job
         depends_on:
-            postgres:
-                condition: service_healthy
+            - postgres
         env_file:
             - .env
         command: ["python", "jobs/feature_job.py"]
@@ -60,12 +87,18 @@ services:
                 limits:
                     memory: 6g
 
+    # ======================================================
+    # TRAINING JOB
+    # ------------------------------------------------------
+    # Trains ML models (classification + regression) for forecasting.
+    # Saves models into `/models` folder.
+    # ======================================================
+
     train_job:
         build: .
         container_name: train-job
         depends_on:
-            postgres:
-                condition: service_healthy
+            - postgres
         env_file:
             - .env
         command: ["python", "jobs/train_job.py"]
@@ -73,31 +106,162 @@ services:
             - ./:/app
             - ./models:/app/models
 
+    # ======================================================
+    # INFERENCE JOB
+    # ------------------------------------------------------
+    # Runs trained models on new feature data to predict energy KPIs.
+    # Writes predictions into `cell_forecast` and `cell_policy`.
+    # ======================================================
+
     inference_job:
         build: .
         container_name: infer-job
         depends_on:
-            postgres:
-                condition: service_healthy
+            - postgres
         env_file:
             - .env
         command: ["python", "jobs/inference_job.py", "--loop"]
         volumes:
             - ./:/app
 
-    # api_dashboard:
-    #     build: .
-    #     container_name: api-dashboard
-    #     depends_on:
-    #         postgres:
-    #             condition: service_healthy
-    #     env_file:
-    #         - .env
-    #     command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
-    #     ports:
-    #         - "8080:8080"
-    #     volumes:
-    #         - ./:/app
+    # ======================================================
+    # FORECAST JOB
+    # ------------------------------------------------------
+    # Optional forecasting process for time-series modeling (Prophet etc.)
+    # Produces longer horizon forecasts for each cell.
+    # ======================================================
+
+    forecast_job:
+        build: .
+        container_name: forecast-job
+        command: python jobs/forecast_job.py
+        volumes:
+            - .:/app
+        depends_on:
+            - postgres
+        env_file:
+            - .env
+
+    # ======================================================
+    # HYPERPARAMETER TUNER
+    # ------------------------------------------------------
+    # Uses Optuna or similar optimization frameworks to find best model params.
+    # Results saved into `/models/best_params.json`.
+    # ======================================================
+
+    tune_job:
+        build: .
+        container_name: tune-job
+        depends_on:
+            - postgres
+        env_file:
+            - .env
+        command: ["python", "jobs/tune_job.py"]
+        volumes:
+            - ./:/app
+            - ./models:/app/models
+
+    # ======================================================
+    # SIMULATOR JOB
+    # ------------------------------------------------------
+    # Generates synthetic radio and network KPIs for multiple virtual cells.
+    # Feeds continuous streaming data into `cell_clean_data`.
+    # ======================================================
+
+    simulator_job:
+        build: .
+        container_name: simulator-job
+        command: python jobs/simulator_job.py
+        depends_on:
+            - postgres
+        environment:
+            - SIM_INTERVAL_SEC=5
+            - SIM_NUM_CELLS=5
+            - SIM_DURATION_MIN=60
+        volumes:
+            - ./:/app
+
+    # ======================================================
+    # POLICY ENGINE
+    # ------------------------------------------------------
+    # Applies AI rules to decide energy actions (increase / decrease / hold).
+    # Syncs `cell_policy` decisions with live `cell_status` table.
+    # ======================================================
+
+    policy_job:
+        build: .
+        container_name: policy-job
+        command: ["python", "policy/policy_engine.py"]
+        volumes:
+            - .:/app
+        depends_on:
+            - postgres
+        env_file:
+            - .env
+        environment:
+            - POLICY_LOOP=false
+
+    # ======================================================
+    # MONITORING JOB
+    # ------------------------------------------------------
+    # Continuously checks for model drift or performance degradation.
+    # Automatically triggers retraining if drift exceeds threshold.
+    # ======================================================
+
+    monitoring_job:
+        build: .
+        container_name: monitoring-job
+        depends_on:
+            - postgres
+        env_file:
+            - .env
+        command: ["python", "jobs/monitoring_job.py", "--loop"]
+        volumes:
+            - ./:/app
+        environment:
+            - MONITORING_LOOP=false
+
+    # ======================================================
+    # KPI JOB
+    # ------------------------------------------------------
+    # Calculates daily KPIs (avg RSRP, SNR, throughput, latency, etc.)
+    # Aggregates results into `cell_kpis_daily`.
+    # ======================================================
+
+    kpis_job:
+        build: .
+        container_name: kpis-job
+        depends_on:
+            - postgres
+        env_file:
+            - .env
+        command: ["python", "jobs/kpis_job.py"]
+        volumes:
+            - ./:/app
+
+    # ======================================================
+    # ENERGY OPERATOR
+    # ------------------------------------------------------
+    # Executes simulated physical energy actions based on policy decisions.
+    # Logs actions into `cell_operation_log`.
+    # ======================================================
+
+    energy_operator:
+        build: .
+        container_name: energy-operator
+        command: ["python", "operations/energy_operator.py"]
+        volumes:
+            - .:/app
+        depends_on:
+            - postgres
+        environment:
+            - PYTHONUNBUFFERED=1
+
+    # ======================================================
+    #  DASHBOARD FRONTEND (REACT)
+    # ------------------------------------------------------
+    # Visual dashboard for metrics, forecasts, and energy actions.
+    # ======================================================
 
     dashboard:
         image: node:20-alpine
@@ -112,77 +276,6 @@ services:
         command: ["sh", "-c", "npm install && npm start"]
         stdin_open: true
         tty: true
-
-    forecast_job:
-        build: .
-        container_name: forecast-job
-        command: python jobs/forecast_job.py
-        volumes:
-            - .:/app
-        depends_on:
-            postgres:
-                condition: service_healthy
-        env_file:
-            - .env
-
-    tune_job:
-        build: .
-        container_name: tune-job
-        depends_on:
-            postgres:
-                condition: service_healthy
-        env_file:
-            - .env
-        command: ["python", "jobs/tune_job.py"]
-        volumes:
-            - ./:/app
-            - ./models:/app/models
-    simulator_job:
-        build: .
-        command: python jobs/simulator_job.py
-        depends_on:
-            postgres:
-                condition: service_healthy
-        environment:
-            - SIM_INTERVAL_SEC=5
-            - SIM_NUM_CELLS=5
-            - SIM_DURATION_MIN=60
-        volumes:
-            - ./:/app
-    policy_job:
-        build: .
-        container_name: policy-job
-        command: ["python", "policy/policy_engine.py"]
-        volumes:
-            - .:/app
-        depends_on:
-            postgres:
-                condition: service_healthy
-        env_file:
-            - .env
-
-    monitoring_job:
-        build: .
-        container_name: monitoring-job
-        depends_on:
-            postgres:
-                condition: service_healthy
-        env_file:
-            - .env
-        command: ["python", "jobs/monitoring_job.py", "--loop"]
-        volumes:
-            - ./:/app
-
-    kpis_job:
-        build: .
-        container_name: kpis-job
-        depends_on:
-            - postgres
-        env_file:
-            - .env
-        command: ["python", "jobs/kpis_job.py"]
-        volumes:
-            - ./:/app
 
 volumes:
     pgdata:

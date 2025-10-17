@@ -1,3 +1,39 @@
+"""
+5G Energy Optimization FEATURE JOB
+=======================================================
+
+Purpose:
+--------
+This script processes raw cellular signal data (RSRP, RSRQ, SNR, throughput, etc.)
+into cleaned, engineered features for AI/ML-based traffic forecasting and energy optimization.
+
+Core Functions:
+---------------
+1. **Excel Ingestion & Cleaning**
+   - Loads raw Excel files with network metrics.
+   - Cleans timestamps, numeric/text fields, and removes invalid rows.
+   - Writes results into `cell_raw` and `cell_clean_data` tables in PostgreSQL.
+
+2. **Feature Engineering Pipeline**
+   - Aggregates signal KPIs (RSRP, SNR, CQI, throughput, etc.).
+   - Generates lag/rolling statistics (15m, 30m, 1h, 3h).
+   - Adds temporal features (hour, weekday, weekend, peak-hour flags).
+   - Computes network health classification (`Excellent`, `Good`, `Weak`, `Very Weak`).
+   - Detects load/traffic trends and calculates estimated energy consumption (kWh).
+
+3. **Database Output**
+   - Writes final processed data to `cell_features` table.
+   - Enables downstream ML training and energy policy simulation.
+
+Technical Notes:
+----------------
+- Database: PostgreSQL (via SQLAlchemy)
+- Feature Horizon: Configurable via `HORIZON_MINUTES` (default: 15)
+- Rolling trend thresholds controlled by env vars `TREND_PCT_UP`, `TREND_PCT_DOWN`
+- Safe re-runnable script — deletes overlapping timestamps before insert
+- Can run once or loop continuously with `--loop` flag for periodic feature updates
+"""
+
 import os
 import time
 import argparse
@@ -149,7 +185,7 @@ def build_features_from_db(chunk_minutes: int = 1440):
         row = con.execute(text("SELECT MIN(ts), MAX(ts), COUNT(*) FROM cell_clean_data")).fetchone()
         min_ts, max_ts, total_cnt = row
     if not min_ts or not max_ts or total_cnt == 0:
-        print("[SRC] cell_clean_data boş. Çıkıyorum."); return
+        print("[SRC] cell_clean_data is empty. I'm exiting."); return
 
     cur_start = pd.to_datetime(min_ts, utc=True)
     hard_end  = pd.to_datetime(max_ts, utc=True)
@@ -247,7 +283,6 @@ def build_features_from_db(chunk_minutes: int = 1440):
 
             return g.reset_index()
 
-
         agg = agg.groupby("cell_id", group_keys=False).apply(_apply_lag_roll).reset_index(drop=True)
 
         agg = agg.groupby("cell_id", group_keys=False).apply(add_extra_rolling).reset_index(drop=True)
@@ -265,7 +300,8 @@ def build_features_from_db(chunk_minutes: int = 1440):
             on="ts",
             by="cell_id",
             direction="backward",
-            tolerance=pd.Timedelta(minutes=120)
+            tolerance=pd.Timedelta(minutes=240)  
+
         )
 
         agg["horizon_minutes"] = HORIZON_MINUTES
@@ -276,6 +312,10 @@ def build_features_from_db(chunk_minutes: int = 1440):
         agg["trend_label"] = np.where(agg["trend_pct"]>=TREND_PCT_UP,"Up",
                               np.where(agg["trend_pct"]<=TREND_PCT_DOWN,"Down","Flat"))
         agg["trend_class"] = agg["trend_label"].map({"Down":0,"Flat":1,"Up":2}).fillna(-1)
+        agg["energy_kwh"] = 0.05 + 0.002 * agg["dl_mbps_mean"]
+        agg["baseline_energy"] = agg["energy_kwh"] * 1.15
+        agg["dl_mbps_mean_fwd_1h"] = agg["dl_mbps_mean_fwd_1h"].fillna(method="ffill")
+        agg["dl_mbps_mean_fwd_1h"] = agg["dl_mbps_mean_fwd_1h"].fillna(agg["dl_mbps_mean"])
 
         feature_cols = [
             "ts","cell_id","latitude","longitude","operator","net_mode","state","speed",
@@ -292,7 +332,8 @@ def build_features_from_db(chunk_minutes: int = 1440):
             "dl_mbps_30m_mean","dl_mbps_30m_std","dl_mbps_30m_min","dl_mbps_30m_max",
             "dl_mbps_1h_mean","dl_mbps_1h_std","dl_mbps_1h_min","dl_mbps_1h_max",
             "dl_mbps_3h_mean","dl_mbps_3h_std","dl_mbps_3h_min","dl_mbps_3h_max",
-            "rsrp_30m_mean","rsrp_30m_std","rsrp_1h_mean","rsrp_1h_std","rsrp_3h_mean","rsrp_3h_std",
+            "rsrp_30m_mean","rsrp_30m_std","rsrp_1h_mean","rsrp_1h_std","rsrp_3h_mean","rsrp_3h_std","energy_kwh", "baseline_energy",
+
 
         ]
         for col in feature_cols:

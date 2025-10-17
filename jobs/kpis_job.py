@@ -1,3 +1,49 @@
+"""
+=============================================================
+5G ENERGY OPTIMIZATION PIPELINE – KPI COMPUTATION JOB
+=============================================================
+
+Purpose:
+--------
+This module computes **daily Key Performance Indicators (KPIs)** from
+raw and processed 5G cell feature data. It aggregates performance metrics
+such as throughput, signal quality, and latency into a compact daily summary.
+
+Core Functions:
+---------------
+1. **Data Extraction**
+   - Fetches recent or date-bounded records from the `cell_features` table.
+   - Uses environment variables (`KPI_START_DATE`, `KPI_END_DATE`) when provided.
+
+2. **KPI Aggregation**
+   - Groups data by `cell_id` and date.
+   - Calculates averages for:
+       • Downlink (DL) and Uplink (UL) Mbps  
+       • RSRP and SNR (signal quality)  
+       • Latency 90th percentile (ping response)
+   - Derives daily **energy consumption estimates**  
+     using a conversion factor (1 Mbps ≈ 0.01 kWh).
+
+3. **Database Integration**
+   - Writes summarized KPI metrics to the `cell_kpis_daily` table
+     with optimized data types and batch insertion for scalability.
+
+4. **Automation**
+   - Supports both manual and scheduled execution.
+   - Intended to be run periodically by the orchestrator container.
+
+Technical Notes:
+----------------
+- Input Table: `cell_features`
+- Output Table: `cell_kpis_daily`
+- Energy Estimation Formula: `energy_kwh = dl_mbps_mean * 0.01`
+- Language: Python 3.11
+- Libraries: pandas, numpy, SQLAlchemy
+- Database: PostgreSQL
+=============================================================
+"""
+
+
 import pandas as pd
 import numpy as np
 import os
@@ -34,7 +80,7 @@ def compute_kpis():
         df = pd.read_sql(query, con)
 
     if df.empty:
-        print(" KPI: cell_features boş, hesaplama yok.")
+        print(" KPI: cell_features are empty, no calculations.")
         return
 
   
@@ -51,7 +97,7 @@ def compute_kpis():
         .reset_index()
     )
 
-    #  (örnek katsayı: 1 Mbps ≈ 0.01 kWh)
+
     kpis["energy_kwh"] = (kpis["dl_mbps_mean"].fillna(0) * 0.01).round(2)
 
   
@@ -75,7 +121,7 @@ def compute_kpis():
             },
         )
 
-    print(f" KPI hesaplandı ve kaydedildi: {len(kpis)} satır")
+    print(f" KPI calculated and recorded: {len(kpis)} line")
 
 if __name__ == "__main__":
     compute_kpis()

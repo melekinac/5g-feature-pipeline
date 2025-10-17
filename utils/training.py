@@ -1,3 +1,38 @@
+"""
+=============================================================
+5G ENERGY OPTIMIZATION – MODEL TRAINING MODULE
+-------------------------------------------------------------
+Description:
+    This module trains, evaluates, and registers both 
+    classification and regression models for 5G base station 
+    energy optimization. It integrates LightGBM, XGBoost, and 
+    RandomForest algorithms with auto-tuned hyperparameters 
+    (via Optuna) and manages model persistence and registry.
+
+Core Responsibilities:
+    • Classification:
+        - Train classifiers to predict signal class (Excellent / Good / Weak / Very Weak)
+        - Store predictions in `cell_policy` for policy decision layer
+        - Register best-performing classifier (e.g., rf_classifier)
+
+    • Regression:
+        - Train regressors to predict future throughput/energy (dl_mbps_mean_fwd_1h)
+        - Log predictions and performance metrics into `cell_forecast` and `model_metrics`
+        - Register active model in `model_registry`
+
+Integrated Components:
+    - utils.db.get_engine() → Database connection (PostgreSQL)
+    - utils.models.save_model() → Save trained model and feature list
+    - utils.registry.register_model() → Track versions in model registry
+    - utils.params.load_best_params() → Load tuned hyperparameters
+    - jobs.feature_job.HORIZON_MINUTES → Forecast horizon for downstream analysis
+
+Metrics Used:
+    • Classification: Accuracy, F1-score
+    • Regression: MAPE (ε=5), SMAPE, RMSE
+=============================================================
+"""
+ 
 import os
 import numpy as np
 import pandas as pd
@@ -117,7 +152,7 @@ def get_data_for_regression(test_ratio=0.3):
 
 def train_lgbm_classifier(X_train, X_test, y_train, y_test, model_name="lgbm_classifier"):
     if LGBMClassifier is None:
-        print("LightGBM kurulu değil, atlanıyor.")
+        print("LightGBM is not installed, skipping it.")
         return None, None, None
 
     le = LabelEncoder()
@@ -149,7 +184,7 @@ def train_lgbm_classifier(X_train, X_test, y_train, y_test, model_name="lgbm_cla
 
 def train_xgb_classifier(X_train, X_test, y_train, y_test, model_name="xgb_classifier"):
     if XGBClassifier is None:
-        print("XGBoost kurulu değil, atlanıyor.")
+        print("XGBoost is not installed, skipping it.")
         return None, None
     
     le = LabelEncoder()
@@ -210,7 +245,7 @@ def train_rf_regressor(X_train, X_test, y_train, y_test, model_name="rf_regresso
 
 def train_lgbm_regressor(X_train, X_test, y_train, y_test, model_name="lgbm_regressor"):
     if LGBMRegressor is None:
-        print("LightGBM kurulu değil, atlanıyor.")
+        print("LightGBM is not installed, skipping it.")
         return None, None, None, None
 
     default_params = {
@@ -237,7 +272,7 @@ def train_lgbm_regressor(X_train, X_test, y_train, y_test, model_name="lgbm_regr
 
 def train_xgb_regressor(X_train, X_test, y_train, y_test, model_name="xgb_regressor"):
     if XGBRegressor is None:
-        print("XGBoost kurulu değil, atlanıyor.")
+        print("XGBoost is not installed, skipping it.")
         return None, None, None, None
 
     default_params = {
@@ -347,20 +382,21 @@ def train_regression(log_transform=True):
         df = pd.read_sql(text("SELECT * FROM cell_features ORDER BY ts"), con)
 
     if "dl_mbps_mean_fwd_1h" not in df.columns:
-        print("'dl_mbps_mean_fwd_1h' kolonu yok.")
+        print("'dl_mbps_mean_fwd_1h' It has no column.")
         return
 
     df["dl_mbps_mean_fwd_1h"] = pd.to_numeric(df["dl_mbps_mean_fwd_1h"], errors="coerce")
     df["dl_mbps_mean"] = pd.to_numeric(df["dl_mbps_mean"], errors="coerce")
 
     before = len(df)
-    df = df[df["dl_mbps_mean_fwd_1h"].notna() & df["dl_mbps_mean"].notna()].copy()
+    # df = df[df["dl_mbps_mean_fwd_1h"].notna() & df["dl_mbps_mean"].notna()].copy()
+    df["dl_mbps_mean_fwd_1h"] = df["dl_mbps_mean_fwd_1h"].fillna(df["dl_mbps_mean"])
+
     dropped = before - len(df)
     if dropped > 0:
-        print(f"Regression: hedefi olmayan (NaN) {dropped} satır düşüldü.")
-
+        print(f"Regression: dropped {dropped}  rows with no target (NaN)")
     if df.empty:
-        print("Regression için geçerli satır kalmadı.")
+        print("No more valid rows for regression.")
         return
 
     y_raw = df["dl_mbps_mean_fwd_1h"].astype(float)
@@ -381,21 +417,6 @@ def train_regression(log_transform=True):
         register_model("rf_regressor", "regressor", "v1", metrics, is_active=True)
         save_results("rf_regressor", y_pred, mape, smape_val)
 
-    # save_model(regr, features, "rf_regressor", version="v1")
-    # metrics = {"mape": mape, "rmse": rmse}
-    # # register_model("rf_regressor", "regressor", "v1", metrics, is_active=True)
-    # save_model(regr, X_train.columns.tolist(), "rf_regressor", version="v1")
-
-    # leakage_cols = [c for c in df.columns if "_fwd_" in c or "_roll" in c or "_lag" in c]
-    # leakage_cols.append("dl_mbps_mean_fwd_1h")
-
-    # X = (
-    #     df.select_dtypes(include=[np.number])
-    #       .drop(columns=leakage_cols, errors="ignore")
-    #       .fillna(0)
-    # )
-
-    # X_train, X_test, y_train, y_test, split_idx = time_split(X, y)
 
     def save_results(model_name, y_pred, mape, smape_val):
         if log_transform:
@@ -407,10 +428,8 @@ def train_regression(log_transform=True):
         out = df.iloc[split_idx:].copy()
         err = np.std(y_true - y_pred)
 
-        # out = df.iloc[split_idx:].copy()
-        # err = np.std(y_test - y_pred)
-
         out["y_hat"] = y_pred
+        out["y_hat"] = np.where(out["y_hat"].isna(), out["dl_mbps_mean"], out["y_hat"])
         out["ci_low"] = y_pred - 1.96 * err
         out["ci_high"] = y_pred + 1.96 * err
         out["confidence"] = 0.8
@@ -421,7 +440,6 @@ def train_regression(log_transform=True):
             out["y_hat"] > out["dl_mbps_mean"], "increase",
             np.where(out["y_hat"] < out["dl_mbps_mean"], "decrease", "stable")
         )
-
         out_df = out[[
             "ts", "cell_id", "y_hat", "ci_low", "ci_high",
             "confidence", "model_name", "mape",
@@ -430,7 +448,6 @@ def train_regression(log_transform=True):
         out_df.to_sql("cell_forecast", eng, if_exists="append", index=False, method="multi", chunksize=500)
         print(f"Regression results written ({model_name}): {len(out_df)} rows")
 
-        
         metrics_df = pd.DataFrame([{
             "model_name": model_name,
             "rmse": float(np.sqrt(np.mean((y_test - y_pred) ** 2))),

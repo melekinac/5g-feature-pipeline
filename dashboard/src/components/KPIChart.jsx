@@ -1,62 +1,21 @@
-// import React, { useEffect, useState } from "react";
-// import { fetchKPIs } from "../api";
-
-// function KPIChart() {
-//   const [data, setData] = useState([]);
-
-//   useEffect(() => {
-//     fetchKPIs().then(setData).catch((err) => {
-//       console.error("KPI fetch error:", err);
-//     });
-//   }, []);
-
-//   return (
-//     <div className="p-4 bg-white rounded-xl shadow text-slate-800">
-//       <h2 className="text-xl font-bold mb-4">KPI Trend</h2>
-//       <div className="overflow-x-auto">
-//         <table className="w-full border border-slate-200 text-sm">
-//           <thead>
-//             <tr className="bg-slate-100 text-slate-800">
-//               <th className="p-2 border border-slate-200">Date</th>
-//               <th className="p-2 border border-slate-200">DL (Mbps)</th>
-//               <th className="p-2 border border-slate-200">UL (Mbps)</th>
-//               <th className="p-2 border border-slate-200">RSRP</th>
-//               <th className="p-2 border border-slate-200">SNR</th>
-//               <th className="p-2 border border-slate-200">Latency P90 (ms)</th>
-//               <th className="p-2 border border-slate-200">Energy (kWh)</th>
-//             </tr>
-//           </thead>
-//           <tbody>
-//             {data.map((row, i) => (
-//               <tr key={i} className="text-center hover:bg-slate-50">
-//                 <td className="p-2 border border-slate-200">{row.date}</td>
-//                 <td className="p-2 border border-slate-200">
-//                   {Number(row.avg_dl).toFixed(2)}
-//                 </td>
-//                 <td className="p-2 border border-slate-200">
-//                   {Number(row.avg_ul).toFixed(2)}
-//                 </td>
-//                 <td className="p-2 border border-slate-200">
-//                   {Number(row.avg_rsrp).toFixed(2)}
-//                 </td>
-//                 <td className="p-2 border border-slate-200">
-//                   {Number(row.avg_snr).toFixed(2)}
-//                 </td>
-//                 <td className="p-2 border border-slate-200">
-//                   {Number(row.avg_latency).toFixed(2)}
-//                 </td>
-//                 <td className="p-2 border border-slate-200">
-//                   {Number(row.total_energy).toFixed(2)}
-//                 </td>
-//               </tr>
-//             ))}
-//           </tbody>
-//         </table>
-//       </div>
-//     </div>
-//   );
-// }
-
+/**
+ * KPIChart.jsx — 5G Energy Optimization Dashboard
+ * =================================================
+ *
+ * Displays overall energy-saving percentage as a key performance indicator (KPI).
+ *
+ * Features:
+ * ----------
+ * - Fetches aggregated energy-saving data from the KPI API endpoint.
+ * - Shows the most recent energy efficiency percentage in a clean, centered card layout.
+ * - Supports dark and light modes with adaptive Tailwind styling.
+ *
+ * Technical Notes:
+ * ----------------
+ * - API: fetchKPIs()
+ * - Data Field: energy_saving_pct (float)
+ * - Display: Rounded to 1 decimal precision (e.g., 12.5%)
+ */
 
 import React, { useEffect, useState } from "react";
 import { fetchKPIs } from "../api";
@@ -65,6 +24,7 @@ export default function EnergyKPI() {
   const [saving, setSaving] = useState(null);
 
   useEffect(() => {
+   
     async function load() {
       try {
         const res = await fetchKPIs();
@@ -77,12 +37,16 @@ export default function EnergyKPI() {
   }, []);
 
   return (
-    <div className="bg-green-100 text-green-800 rounded-xl shadow p-6 text-center">
-      <h2 className="text-lg font-semibold"> Energy Saving</h2>
-      <p className="text-3xl font-bold mt-2">
+    <div className="w-full h-full rounded-xl p-6 transition-colors duration-500 bg-white dark:bg-slate-800 shadow text-center">
+      <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+        Enerji Tasarrufu
+      </h2>
+      <p className="text-3xl font-bold mt-2 text-emerald-600 dark:text-emerald-400">
         {saving ? `${saving.toFixed(1)}%` : "…"}
       </p>
-      <span className="text-sm">Son 7 gün</span>
+      <span className="text-sm text-gray-500 dark:text-gray-400">
+        Son 7 Gün
+      </span>
     </div>
   );
 }

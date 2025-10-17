@@ -20,3 +20,55 @@
     opacity: 1;
   }
 }
+html, body {
+  @apply bg-gray-50 dark:bg-[#0f172a] transition-colors duration-500;
+}
+
+.leaflet-container {
+  background: transparent !important;
+}
+
+.recharts-surface {
+  background-color: transparent !important;
+}
+
+main.bg-slate-50,
+.bg-slate-50 {
+  background-color: transparent !important;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.driver-popover {
+  background-color: #1e293b !important;
+  color: #fff !important;
+  border-radius: 0.75rem !important;
+}
+
+.custom-tour-popover {
+  background: #1e293b !important;
+  color: #fff !important;
+  border-radius: 0.75rem !important;
+  padding: 1rem !important;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out forwards;
+}
