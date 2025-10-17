@@ -144,7 +144,8 @@ export default function Dashboard() {
               {energySummary.saved_pct?.toFixed(1)}%
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {energySummary.saved_kwh?.toFixed(2)} kWh
+              {energySummary.total_energy_kwh_year?.toFixed(0)} kWh
+
             </p>
           </div>
 
