@@ -1,4 +1,4 @@
-# ⚡ 5G ENERGY OPTIMIZATION PIPELINE
+# 5G ENERGY OPTIMIZATION PIPELINE
 
 ### AI-Driven Energy Efficiency for 5G Base Stations
 
@@ -8,14 +8,14 @@
 
 ---
 
-## 🌍 Overview
+## Overview
 
 This project optimizes **energy consumption in 5G base stations** through **AI-based traffic forecasting** and **dynamic energy management**.
 By analyzing real-time RSRP, SNR, CQI, and throughput data, the system predicts traffic demand and intelligently switches base stations between **Active** and **Sleep** modes — saving energy and reducing CO₂ emissions.
 
 ---
 
-## 🧩 System Architecture
+## System Architecture
 
 ```mermaid
 flowchart TD
@@ -52,7 +52,7 @@ With a single command, the complete AI pipeline starts and operates end-to-end �
 
 ---
 
-## 🧠 Workflow
+## Workflow
 
 ### 1️⃣ Feature Engineering
 
@@ -107,7 +107,7 @@ Executes simulated power operations:
 
 ---
 
-## 🧮 Tech Stack
+## Tech Stack
 
 -   **Python 3.11**, FastAPI, SQLAlchemy, Pandas, Scikit-Learn, XGBoost, LightGBM
 -   **PostgreSQL 16**, pgAdmin 8
@@ -117,7 +117,7 @@ Executes simulated power operations:
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1️⃣ Clone the Repository
 
@@ -164,7 +164,7 @@ The script will:
 
 ---
 
-## 🧩 Optional Simulation Mode
+## Optional Simulation Mode
 
 If real 5G data is unavailable, enable the simulator:
 
@@ -176,7 +176,7 @@ This generates synthetic cell data (`cell_clean_data`) for the entire pipeline.
 
 ---
 
-## 📊 Example Outputs
+## Example Outputs
 
 | Metric          | Example Value | Description                       |
 | --------------- | ------------- | --------------------------------- |
@@ -187,7 +187,7 @@ This generates synthetic cell data (`cell_clean_data`) for the entire pipeline.
 
 ---
 
-## ♻️ Results & Benefits
+## Results & Benefits
 
 ✅ Up to **10–15 %** energy saving in low-traffic hours
 ✅ Reduced **CO₂ footprint** (aligned with AI4EE sustainability goals)
@@ -199,11 +199,6 @@ This generates synthetic cell data (`cell_clean_data`) for the entire pipeline.
 
 ## 🧾 License
 
-This project is released under the **MIT License**.
-© 2025 Melek Inaç – All rights reserved.
+2025 Melek Inaç – All rights reserved.
 
 ---
-
-## 💬 Acknowledgements
-
-Special thanks to **Turkcell**, **Erman Adalı**, and the **Geleceği Yazan Kadınlar AI Program** for mentorship and support.
