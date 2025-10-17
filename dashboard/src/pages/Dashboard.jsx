@@ -140,9 +140,9 @@ export default function Dashboard() {
             <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide">
               Enerji Tasarrufu
             </h3>
-            <p className="text-3xl font-bold text-blue-600 dark:text-blue-200 mt-2">
+            {/* <p className="text-3xl font-bold text-blue-600 dark:text-blue-200 mt-2">
               {energySummary.saved_pct?.toFixed(1)}%
-            </p>
+            </p> */}
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {energySummary.total_energy_kwh_year?.toFixed(0)} kWh
 
