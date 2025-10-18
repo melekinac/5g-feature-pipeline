@@ -25,32 +25,33 @@ def get_engine() -> Engine:
     # -------------------------------------------------------------
     # Environment Variables
     # -------------------------------------------------------------
-    db_user = os.getenv("POSTGRES_USER", "postgres5g")
-    db_pass = os.getenv("POSTGRES_PASSWORD", "postgres5g")
+    db_user = os.getenv("POSTGRES_USER", "postgres")
+    db_pass = os.getenv("POSTGRES_PASSWORD", "Postgres5g*")
     db_name = os.getenv("POSTGRES_DB", "user_activity_db")
-    db_host = os.getenv("POSTGRES_HOST", "postgres")  # ⚡ Docker service name
+    db_host = os.getenv("POSTGRES_HOST", "35.195.134.149")
     db_port = os.getenv("POSTGRES_PORT", "5432")
-    instance_connection_name = "g-energy-optimize:europe-west1:g5-postgres"
 
     # -------------------------------------------------------------
-    # Environment Detection
+    # Connection Method
     # -------------------------------------------------------------
-    if os.getenv("K_SERVICE"):  # ✅ Running in Cloud Run
-        print("🌩 Using Unix socket connection (Cloud Run / Cloud SQL).")
-        url = (
-            f"postgresql+psycopg2://{db_user}:{db_pass}@/{db_name}"
-            f"?host=/cloudsql/{instance_connection_name}"
-        )
-    else:  # ✅ Local or Docker
-        print("🐳 Using TCP connection (Local / Docker).")
-        url = (
-            f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
-        )
+    # We now always use TCP (Public IP) for Cloud Run and Local environments.
+    # Unix sockets are disabled because they often fail without proper IAM bindings.
+    print("Using TCP/IP connection for PostgreSQL (Cloud SQL / Local / Docker).")
+    url = f"postgresql+psycopg2://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
 
     # -------------------------------------------------------------
-    # Create Engine
+    # Create SQLAlchemy Engine
     # -------------------------------------------------------------
-    return create_engine(url, echo=False, future=True, pool_pre_ping=True)
+    engine = create_engine(
+        url,
+        echo=False,           
+        future=True,         
+        pool_pre_ping=True,  
+        pool_size=5,         
+        max_overflow=2,      
+    )
+
+    return engine
 
 
 # -------------------------------------------------------------
