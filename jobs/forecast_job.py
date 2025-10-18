@@ -43,6 +43,7 @@ import os
 import time
 import warnings
 import pandas as pd
+import numpy as np
 import multiprocessing as mp
 from sqlalchemy import text
 from utils.db import get_engine
