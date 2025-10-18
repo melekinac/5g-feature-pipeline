@@ -99,7 +99,7 @@ function Layout({ children }) {
 
       
         <footer className="bg-slate-800 text-white py-3 px-6 flex items-center justify-between">
-          <span>5G Energy Optimization Platform</span>
+          <span>5G Enerji Optimizasyon Platformu</span>
           <span className="text-sm text-slate-400">
             © {new Date().getFullYear()}
           </span>

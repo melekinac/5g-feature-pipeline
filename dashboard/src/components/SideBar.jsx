@@ -26,7 +26,7 @@ function Sidebar() {
   const location = useLocation();
 
   const navItems = [
-    { path: "/", label: "Dashboard", icon: "📊" },
+    { path: "/", label: "Kontrol Paneli", icon: "📊" },
     { path: "/map", label: "Harita", icon: "🗺️" },
     { path: "/policy-actions", label: "Son Politika Aksiyonları", icon: "🧩" },
   ];
@@ -48,7 +48,7 @@ function Sidebar() {
             />
             {isOpen && (
               <span className="font-bold text-xl whitespace-nowrap">
-                5G Energy
+                 5G Enerji 
               </span>
             )}
           </div>
