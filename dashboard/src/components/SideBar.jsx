@@ -81,7 +81,7 @@ function Sidebar() {
 
   
         <div className="p-4 border-t border-slate-700 text-xs text-slate-400 text-center">
-          {isOpen && "v1.0.0 – AI Energy Optimizer"}
+          {isOpen && "v1.0.0 – Yapay Zeka Enerji Optimizasyonu"}
         </div>
       </div>
     </div>
