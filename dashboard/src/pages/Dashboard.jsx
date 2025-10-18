@@ -171,9 +171,9 @@ export default function Dashboard() {
     Yıllık Tahmin
   </h3>
   <p className="text-lg font-medium text-purple-700 dark:text-purple-200 mt-1">
-   {energySummary.saved_kwh
-  ? `${(energySummary.saved_kwh / 1000).toFixed(2)} MWh`
-  : "Veri Yok"}
+  {energySummary.saved_kwh
+          ? `${animatedValue.toFixed(2)} MWh`
+          : "Veri Yok"}
 
   </p>
   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
