@@ -173,7 +173,7 @@ export default function Dashboard() {
 
   <p className="text-lg font-medium text-purple-700 dark:text-purple-200 mt-1">
     {energySummary.saved_kwh
-      ? `${(energySummary.saved_kwh / 1000).toFixed(2)} MWh`
+      ? `${(energySummary.saved_kwh )} kWh`
       : "Veri Yok"}
   </p>
 
