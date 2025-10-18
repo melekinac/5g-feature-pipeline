@@ -14,7 +14,6 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 
-# ✅ Local import from api/database.py
 from .database import SessionLocal, engine, Base
 from .models import User
 
@@ -26,7 +25,7 @@ Base.metadata.create_all(bind=engine)
 # -------------------------------------------------
 # JWT Configuration
 # -------------------------------------------------
-SECRET_KEY = "supersecret"  # ⚠️ Move to .env in production
+SECRET_KEY = "supersecret"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
@@ -64,6 +63,19 @@ def create_access_token(data: dict, expires_delta=None):
 class UserIn(BaseModel):
     username: str
     password: str
+
+# -------------------------------------------------
+# Root Auth Endpoint (for testing / landing)
+# -------------------------------------------------
+@router.get("/")
+def auth_root():
+    """Simple route to confirm /auth works."""
+    return {
+        "message": "Authentication endpoints available:",
+        "register": "/auth/register",
+        "login": "/auth/token",
+        "current_user": "/auth/me",
+    }
 
 # -------------------------------------------------
 # Register Endpoint
