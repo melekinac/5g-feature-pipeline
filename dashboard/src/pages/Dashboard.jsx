@@ -163,23 +163,25 @@ export default function Dashboard() {
             </p>
           </div>
 
-           <div
+      <div
   id="energyForecastCard"
   className="bg-purple-50 dark:bg-purple-900 rounded-xl p-5 shadow flex flex-col justify-center"
 >
   <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wide">
     Yıllık Tahmin
   </h3>
-  <p className="text-lg font-medium text-purple-700 dark:text-purple-200 mt-1">
-  {energySummary.saved_kwh
-          ? `${animatedValue.toFixed(2)} MWh`
-          : "Veri Yok"}
 
+  <p className="text-lg font-medium text-purple-700 dark:text-purple-200 mt-1">
+    {energySummary.saved_kwh
+      ? `${(energySummary.saved_kwh / 1000).toFixed(2)} MWh`
+      : "Veri Yok"}
   </p>
+
   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
     Toplam yıllık enerji tasarrufu
   </p>
 </div>
+
 
         </section>
       )}
