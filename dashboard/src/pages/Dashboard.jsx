@@ -133,7 +133,37 @@ export default function Dashboard() {
             </p>
           </div>
 
-  <div
+          <div
+            id="energyCard"
+            className="bg-blue-50 dark:bg-blue-900 rounded-xl p-5 shadow flex flex-col justify-center"
+          >
+            <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide">
+              Enerji Tasarrufu
+            </h3>
+            <p className="text-3xl font-bold text-blue-600 dark:text-blue-200 mt-2">
+              {energySummary.saved_pct?.toFixed(1)}%
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {energySummary.saved_kwh?.toFixed(2)} kWh
+            </p>
+          </div>
+
+          <div
+            id="savingCard"
+            className="bg-amber-50 dark:bg-amber-900 rounded-xl p-5 shadow flex flex-col justify-center"
+          >
+            <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wide">
+              Ekonomik Kazanç
+            </h3>
+            <p className="text-3xl font-bold text-amber-600 dark:text-amber-200 mt-2">
+              {energySummary.saved_tl?.toLocaleString("tr-TR")} ₺
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Yıllık tahmini kazanç
+            </p>
+          </div>
+
+           <div
   id="energyForecastCard"
   className="bg-purple-50 dark:bg-purple-900 rounded-xl p-5 shadow flex flex-col justify-center"
 >
@@ -151,37 +181,6 @@ export default function Dashboard() {
   </p>
 </div>
 
-
-
-          <div
-            id="savingCard"
-            className="bg-amber-50 dark:bg-amber-900 rounded-xl p-5 shadow flex flex-col justify-center"
-          >
-            <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wide">
-              Ekonomik Kazanç
-            </h3>
-            <p className="text-3xl font-bold text-amber-600 dark:text-amber-200 mt-2">
-              {energySummary.saved_tl?.toLocaleString("tr-TR")} ₺
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Yıllık tahmini kazanç
-            </p>
-          </div>
-
-          <div
-            id="energyForecastCard"
-            className="bg-purple-50 dark:bg-purple-900 rounded-xl p-5 shadow flex flex-col justify-center"
-          >
-            <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wide">
-              Yıllık Tahmin
-            </h3>
-            <p className="text-lg font-medium text-purple-700 dark:text-purple-200 mt-1">
-              {energySummary.total_energy_kwh_year?.toFixed(0)} kWh
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Toplam yıllık enerji tüketimi
-            </p>
-          </div>
         </section>
       )}
 
