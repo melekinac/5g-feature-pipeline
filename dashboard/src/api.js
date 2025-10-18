@@ -145,3 +145,8 @@ export async function fetchLatestPolicyActions() {
 export async function fetchCellHistory(cell_id) {
   return authFetch(`/api/cell_history/${cell_id}`);
 }
+
+export function logout() {
+  localStorage.removeItem("access_token");
+  window.location.href = "/login"; // veya "/"
+}

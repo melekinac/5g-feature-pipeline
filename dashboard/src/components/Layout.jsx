@@ -22,6 +22,7 @@
 
 import React, { useEffect, useState } from "react";
 import Sidebar from "./SideBar";
+import { useNavigate } from "react-router-dom";
 
 /**
  * Safely decode a JWT without verifying signature.
@@ -46,7 +47,7 @@ function parseJwt(token) {
 
 function Layout({ children }) {
   const [username, setUsername] = useState("Kullanıcı");
-
+ const navigate = useNavigate();
  
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -64,7 +65,7 @@ function Layout({ children }) {
    */
   const handleLogout = () => {
     localStorage.removeItem("access_token");
-    window.location.href = "/auth";
+    navigate("/auth"); 
   };
 
   return (
