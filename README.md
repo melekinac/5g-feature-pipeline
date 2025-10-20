@@ -19,13 +19,14 @@ By analyzing real-time RSRP, SNR, CQI, and throughput data, the system predicts 
 
 ```mermaid
 flowchart TD
-    A[Simulator (optional)] --> B[Feature Engineering]
+    A["Simulator (optional)"] --> B[Feature Engineering]
     B --> C[Model Training]
     C --> D[Forecasting / Inference]
     D --> E[Policy Engine]
     E --> F[Energy Operator]
     F --> G[Monitoring & KPI Summary]
     G --> H[Dashboard & API]
+
 ```
 
 All modules are implemented as **Dockerized microservices** and orchestrated automatically using
